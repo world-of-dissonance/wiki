@@ -1,0 +1,69 @@
+# Pulls the World of Dissonance doc every hour and redeploys the wiki when it changed.
+# Read-only: it downloads the doc's public export and never writes to it.
+name: Sync from doc
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.check.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install markdown==3.7 pillow==11.0.0
+      - name: Build from the doc
+        run: python build.py --out site --cache .cache
+      - name: Audit the pages against the doc (report only)
+        run: python audit.py site .cache || true
+      - name: Did the doc change?
+        id: check
+        run: |
+          new=$(python -c "import json;print(json.load(open('site/build.json'))['hash'])")
+          old=$(cat last-hash.txt 2>/dev/null || true)
+          if [ "$new" != "$old" ] || [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "$new" > last-hash.txt
+      # recording the hash also keeps the hourly schedule from going dormant (GitHub pauses idle schedules after 60 days)
+      - name: Record the doc version
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          git config user.name "wiki-sync"
+          git config user.email "wiki-sync@users.noreply.github.com"
+          git add last-hash.txt
+          git diff --cached --quiet || { git commit -m "Sync from doc" && git push; }
+      - uses: actions/upload-pages-artifact@v3
+        if: steps.check.outputs.changed == 'true'
+        with:
+          path: site
+
+  deploy:
+    needs: sync
+    if: needs.sync.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
