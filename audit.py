@@ -60,6 +60,9 @@ for t in tabs:
     for m in re.finditer(r".{0,30}(\*\*|\\[-\[\]>*_]|(?<![\w])\*(?=\w)|__).{0,30}", visible):
         report(name, "markdown symbols", m.group(0).strip())
 
+    for row in re.findall(r"<p>\|[^<]{0,60}", article):  # a table that failed to parse prints its pipes
+        report(name, "broken table", row)
+
     # 4. the same heading twice on one page (search and contents links get ambiguous)
     # only top-level sections: tier names repeat legitimately under different trees
     heads = [html.unescape(re.sub(r"<[^>]+>", "", h)).strip() for h in re.findall(r"<h2[^>]*>(.*?)</h2>", article)]

@@ -1,0 +1,571 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-28T00:00:00Z",
+  "title": "Design System: World of Dissonance Compendium",
+  "extensions": {
+    "colorMeta": {
+      "cloth": {
+        "role": "primary",
+        "displayName": "Teal Book Cloth",
+        "canonical": "#1d4a52",
+        "tonalRamp": [
+          "#143339",
+          "#235862",
+          "#317e8b",
+          "#40a3b5",
+          "#65b9c8",
+          "#8eccd7",
+          "#bbe0e7",
+          "#ecf6f8"
+        ]
+      },
+      "cloth-deep": {
+        "role": "primary",
+        "displayName": "Cloth Deep",
+        "canonical": "#153840",
+        "tonalRamp": [
+          "#13323a",
+          "#215764",
+          "#2f7c8e",
+          "#3ca1b8",
+          "#62b8cb",
+          "#8ccbd9",
+          "#bae0e8",
+          "#ecf6f9"
+        ]
+      },
+      "cloth-line": {
+        "role": "primary",
+        "displayName": "Cloth Line",
+        "canonical": "#33656c",
+        "tonalRamp": [
+          "#193134",
+          "#2b545a",
+          "#3d7880",
+          "#4f9ca6",
+          "#71b3bc",
+          "#97c7ce",
+          "#c1dee2",
+          "#eef6f7"
+        ]
+      },
+      "cloth-text": {
+        "role": "primary",
+        "displayName": "Cloth Text",
+        "canonical": "#e3eeea",
+        "tonalRamp": [
+          "#1d3029",
+          "#325347",
+          "#477565",
+          "#5c9883",
+          "#7db09d",
+          "#a0c5b8",
+          "#c6dcd4",
+          "#eff5f3"
+        ]
+      },
+      "cloth-mute": {
+        "role": "primary",
+        "displayName": "Cloth Mute",
+        "canonical": "#bcd4cf",
+        "tonalRamp": [
+          "#1e2f2b",
+          "#34514b",
+          "#4a736a",
+          "#60958a",
+          "#80ada4",
+          "#a2c3bc",
+          "#c7dbd7",
+          "#eff5f4"
+        ]
+      },
+      "gilt": {
+        "role": "secondary",
+        "displayName": "Gilt",
+        "canonical": "#c9a227",
+        "tonalRamp": [
+          "#40340c",
+          "#6f5a16",
+          "#9e7f1f",
+          "#cda528",
+          "#ddbb50",
+          "#e6cd7f",
+          "#f0e1b2",
+          "#fbf7ea"
+        ]
+      },
+      "gilt-soft": {
+        "role": "secondary",
+        "displayName": "Soft Gilt",
+        "canonical": "#e7cf7c",
+        "tonalRamp": [
+          "#41350c",
+          "#705c15",
+          "#9f821d",
+          "#cfa926",
+          "#dfbe4e",
+          "#e7d07e",
+          "#f1e3b1",
+          "#fbf7e9"
+        ]
+      },
+      "gilt-ink": {
+        "role": "secondary",
+        "displayName": "Gilt Ink",
+        "canonical": "#1f1806",
+        "tonalRamp": [
+          "#40320c",
+          "#6f5616",
+          "#9e7a1f",
+          "#cd9f28",
+          "#ddb650",
+          "#e6c97f",
+          "#f0dfb2",
+          "#fbf6ea"
+        ]
+      },
+      "page": {
+        "role": "neutral",
+        "displayName": "India Paper",
+        "canonical": "#f6f7f3",
+        "tonalRamp": [
+          "#2a2e1f",
+          "#495035",
+          "#68714b",
+          "#879362",
+          "#a1ab82",
+          "#bac2a3",
+          "#d6dac8",
+          "#f4f5f0"
+        ]
+      },
+      "page-edge": {
+        "role": "neutral",
+        "displayName": "Page Edge",
+        "canonical": "#e9ece5",
+        "tonalRamp": [
+          "#272c20",
+          "#444d38",
+          "#606d50",
+          "#7d8d67",
+          "#99a786",
+          "#b4bea7",
+          "#d2d8ca",
+          "#f3f4f0"
+        ]
+      },
+      "plate": {
+        "role": "neutral",
+        "displayName": "Plate White",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#262626",
+          "#424242",
+          "#5e5e5e",
+          "#7a7a7a",
+          "#969696",
+          "#b2b2b2",
+          "#d1d1d1",
+          "#f2f2f2"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#16202b",
+        "tonalRamp": [
+          "#1a2633",
+          "#2d4158",
+          "#405d7d",
+          "#5379a2",
+          "#7595b8",
+          "#9ab1cb",
+          "#c2d0e0",
+          "#eef2f6"
+        ]
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "Ink 2",
+        "canonical": "#3a4450",
+        "tonalRamp": [
+          "#20262c",
+          "#38414d",
+          "#4f5d6d",
+          "#67798e",
+          "#8695a7",
+          "#a6b1bf",
+          "#cad0d8",
+          "#f0f2f4"
+        ]
+      },
+      "mute": {
+        "role": "neutral",
+        "displayName": "Mute",
+        "canonical": "#5b6570",
+        "tonalRamp": [
+          "#22262a",
+          "#3b4249",
+          "#555e68",
+          "#6e7a87",
+          "#8c96a1",
+          "#abb2ba",
+          "#ccd1d6",
+          "#f1f2f4"
+        ]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Rule",
+        "canonical": "#d6dbd3",
+        "tonalRamp": [
+          "#252a22",
+          "#41493c",
+          "#5c6855",
+          "#77876e",
+          "#94a18c",
+          "#b1baab",
+          "#d0d6cd",
+          "#f2f4f1"
+        ]
+      },
+      "rule-soft": {
+        "role": "neutral",
+        "displayName": "Soft Rule",
+        "canonical": "#e4e8e1",
+        "tonalRamp": [
+          "#262b21",
+          "#414b3a",
+          "#5d6b52",
+          "#788b6a",
+          "#94a489",
+          "#b1bda8",
+          "#d0d7cb",
+          "#f2f4f1"
+        ]
+      },
+      "link": {
+        "role": "neutral",
+        "displayName": "Link Teal",
+        "canonical": "#1d5b66",
+        "tonalRamp": [
+          "#11353c",
+          "#1d5c67",
+          "#2a8393",
+          "#36aabf",
+          "#5cbfd1",
+          "#88d0dd",
+          "#b8e3eb",
+          "#ebf7f9"
+        ]
+      },
+      "vol-lore": {
+        "role": "tertiary",
+        "displayName": "Oxblood (Lore)",
+        "canonical": "#8a2f3c",
+        "tonalRamp": [
+          "#391319",
+          "#63222b",
+          "#8d303d",
+          "#b73e4f",
+          "#ca6372",
+          "#d88d98",
+          "#e8bbc1",
+          "#f9ecee"
+        ]
+      },
+      "vol-peoples": {
+        "role": "tertiary",
+        "displayName": "Forest (Peoples)",
+        "canonical": "#2f6b4f",
+        "tonalRamp": [
+          "#173527",
+          "#285c44",
+          "#3a8361",
+          "#4baa7e",
+          "#6ebf99",
+          "#95d0b4",
+          "#bfe3d2",
+          "#edf7f3"
+        ]
+      },
+      "vol-aspects": {
+        "role": "tertiary",
+        "displayName": "Lapis (Aspects)",
+        "canonical": "#2b5d9b",
+        "tonalRamp": [
+          "#11243c",
+          "#1d3e68",
+          "#295994",
+          "#3573c0",
+          "#5b90d2",
+          "#87aede",
+          "#b7ceeb",
+          "#ebf1f9"
+        ]
+      },
+      "vol-arcana": {
+        "role": "tertiary",
+        "displayName": "Violet (Arcana)",
+        "canonical": "#6b3f8f",
+        "tonalRamp": [
+          "#281735",
+          "#45295c",
+          "#623a83",
+          "#7f4baa",
+          "#9b6ebf",
+          "#b595d0",
+          "#d3bfe3",
+          "#f3edf7"
+        ]
+      },
+      "vol-rules": {
+        "role": "tertiary",
+        "displayName": "Copper (Rules)",
+        "canonical": "#a8561a",
+        "tonalRamp": [
+          "#42220a",
+          "#733b12",
+          "#a35419",
+          "#d46d21",
+          "#e38b4a",
+          "#eaaa7b",
+          "#f3ccb0",
+          "#fcf1e9"
+        ]
+      },
+      "vol-catalogs": {
+        "role": "tertiary",
+        "displayName": "Slate (Catalogs)",
+        "canonical": "#626870",
+        "tonalRamp": [
+          "#242629",
+          "#3e4247",
+          "#585d65",
+          "#727983",
+          "#8f959d",
+          "#adb2b8",
+          "#ced1d4",
+          "#f1f2f3"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Title-page title on cloth, in Soft Gilt."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Entry title in the chapter band."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Section heads (h2) with § number and hairline above."
+      },
+      "title-sm": {
+        "displayName": "Title Small",
+        "purpose": "Subsection heads (h3); skill record names and pager titles at 19px."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Reading text, max 68ch; 17px on phones."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Uppercase tracked apparatus: running head, thumbs, table heads, stat labels, h4."
+      },
+      "data": {
+        "displayName": "Data",
+        "purpose": "All tables, tabular figures."
+      }
+    },
+    "shadows": [
+      {
+        "name": "results-sheet",
+        "value": "0 18px 40px -12px rgba(16, 32, 40, .35)",
+        "purpose": "Search results dropdown only; the one floating layer."
+      },
+      {
+        "name": "field-focus-halo",
+        "value": "0 0 0 3px color-mix(in srgb, #c9a227 30%, transparent)",
+        "purpose": "Search input focus."
+      },
+      {
+        "name": "tab-notch",
+        "value": "-10px 0 0 -4px #f6f7f3",
+        "purpose": "Paper-coloured cut beside the current desktop thumb tab."
+      },
+      {
+        "name": "phone-tab-marker",
+        "value": "inset 0 4px 0 #fff",
+        "purpose": "Current or hovered tab in the phone bottom strip."
+      }
+    ],
+    "motion": [
+      {
+        "name": "thumb-slide",
+        "value": "margin-left .28s cubic-bezier(.2, .8, .2, 1)",
+        "purpose": "Thumb tabs sliding out on hover and when current."
+      },
+      {
+        "name": "strip-snap",
+        "value": "scroll-snap-type: x mandatory; scroll-behavior: smooth",
+        "purpose": "Picture strips snapping plate to plate."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "transition: none; scroll-behavior: auto",
+        "purpose": "All motion removed under prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "phone",
+        "value": "820px",
+        "purpose": "max-width: bottom thumb strip, static masthead, stacked band, collapsible contents."
+      },
+      {
+        "name": "narrow",
+        "value": "1100px",
+        "purpose": "max-width: 180px margin column, one-column home contents."
+      },
+      {
+        "name": "wide",
+        "value": "1101px",
+        "purpose": "min-width: 64px column gap, § numbers hung in the gutter."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single gilt action on the cloth title page.",
+      "html": "<div class=\"ds-cloth\"><a class=\"ds-btn ds-btn-primary\" href=\"#\">Begin at Vol. I</a></div>",
+      "css": ".ds-cloth { background: var(--cloth, #1d4a52); padding: 24px; } .ds-btn { display: inline-flex; align-items: center; min-height: 44px; padding: 10px 20px; border: 1px solid var(--cloth-line, #33656c); border-radius: 2px; color: var(--cloth-text, #e3eeea); text-decoration: none; font: 700 14px \"Archivo Narrow\", \"Arial Narrow\", sans-serif; letter-spacing: .1em; text-transform: uppercase; } .ds-btn:focus-visible { outline: 2px solid var(--gilt, #c9a227); outline-offset: 2px; } .ds-btn-primary { background: var(--gilt, #c9a227); border-color: var(--gilt, #c9a227); color: #1f1806; } .ds-btn-primary:hover { background: var(--gilt-soft, #e7cf7c); color: #1f1806; }"
+    },
+    {
+      "name": "Cloth Button",
+      "kind": "button",
+      "refersTo": "button-cloth",
+      "description": "Secondary title-page action: outline on cloth, gilt on hover.",
+      "html": "<div class=\"ds-cloth\"><a class=\"ds-btn\" href=\"#\">Make a character</a></div>",
+      "css": ".ds-cloth { background: var(--cloth, #1d4a52); padding: 24px; } .ds-btn { display: inline-flex; align-items: center; min-height: 44px; padding: 10px 20px; border: 1px solid var(--cloth-line, #33656c); border-radius: 2px; color: var(--cloth-text, #e3eeea); text-decoration: none; font: 700 14px \"Archivo Narrow\", \"Arial Narrow\", sans-serif; letter-spacing: .1em; text-transform: uppercase; } .ds-btn:focus-visible { outline: 2px solid var(--gilt, #c9a227); outline-offset: 2px; } .ds-btn:hover { color: var(--gilt-soft, #e7cf7c); border-color: var(--gilt, #c9a227); }"
+    },
+    {
+      "name": "Search Field",
+      "kind": "input",
+      "refersTo": "search-field",
+      "description": "Recessed search well in the cloth masthead; '/' focuses it.",
+      "html": "<div class=\"ds-cloth\"><div class=\"ds-search\"><svg viewBox=\"0 0 20 20\" aria-hidden=\"true\"><circle cx=\"8.5\" cy=\"8.5\" r=\"5.5\"/><path d=\"m13 13 4.5 4.5\"/></svg><input type=\"search\" placeholder=\"Search races, skills, rules\" aria-label=\"Search the compendium\"><kbd>/</kbd></div></div>",
+      "css": ".ds-cloth { background: var(--cloth, #1d4a52); padding: 12px 24px; border-bottom: 3px solid var(--gilt, #c9a227); } .ds-search { position: relative; max-width: 460px; display: flex; align-items: center; } .ds-search svg { position: absolute; left: 13px; width: 17px; height: 17px; fill: none; stroke: var(--cloth-mute, #bcd4cf); stroke-width: 2; stroke-linecap: round; } .ds-search input { width: 100%; height: 40px; padding: 0 40px; border: 1px solid var(--cloth-line, #33656c); border-radius: 3px; background: var(--cloth-deep, #153840); color: #fff; font: 500 15px \"Archivo Narrow\", \"Arial Narrow\", sans-serif; letter-spacing: .02em; } .ds-search input::placeholder { color: var(--cloth-mute, #bcd4cf); } .ds-search input:focus { outline: none; border-color: var(--gilt, #c9a227); box-shadow: 0 0 0 3px color-mix(in srgb, var(--gilt, #c9a227) 30%, transparent); } .ds-search kbd { position: absolute; right: 10px; font: 600 12px \"Archivo Narrow\", \"Arial Narrow\", sans-serif; color: var(--cloth-text, #e3eeea); border: 1px solid var(--cloth-line, #33656c); border-radius: 3px; padding: 0 6px; }"
+    },
+    {
+      "name": "Thumb Index",
+      "kind": "nav",
+      "refersTo": "thumb-tab",
+      "description": "Six volume tabs on the fore-edge; current pulls flush, last-read wears the gilt ribbon.",
+      "html": "<nav class=\"ds-thumbs\"><a class=\"ds-thumb\" style=\"--t: var(--lore, #8a2f3c)\" href=\"#\"><span class=\"ds-num\">I</span><span class=\"ds-label\">Lore</span><small>History, regions</small></a><a class=\"ds-thumb\" style=\"--t: var(--peoples, #2f6b4f)\" href=\"#\"><span class=\"ds-num\">II</span><span class=\"ds-label\">Peoples</span><small>Races, Eon-Kin</small><span class=\"ds-ribbon\"></span></a><a class=\"ds-thumb\" style=\"--t: var(--aspects, #2b5d9b)\" href=\"#\"><span class=\"ds-num\">III</span><span class=\"ds-label\">Aspects</span><small>Astra, Fibero, Eternum</small></a><a class=\"ds-thumb\" style=\"--t: var(--arcana, #6b3f8f)\" href=\"#\" aria-current=\"true\"><span class=\"ds-num\">IV</span><span class=\"ds-label\">Arcana</span><small>Arcana, skill trees</small></a><a class=\"ds-thumb\" style=\"--t: var(--rules, #a8561a)\" href=\"#\"><span class=\"ds-num\">V</span><span class=\"ds-label\">Rules</span><small>Rolls, combat</small></a><a class=\"ds-thumb\" style=\"--t: var(--catalogs, #626870)\" href=\"#\"><span class=\"ds-num\">VI</span><span class=\"ds-label\">Catalogs</span><small>Items, relics</small></a></nav>",
+      "css": ".ds-thumbs { width: 132px; display: grid; grid-auto-rows: 72px; gap: 6px; padding: 18px 0; background: linear-gradient(90deg, var(--page-edge, #e9ece5), var(--page, #f6f7f3)); border-left: 1px solid var(--rule, #d6dbd3); } .ds-thumb { position: relative; display: flex; flex-direction: column; justify-content: center; gap: 2px; margin-left: 20px; padding: 0 12px 0 16px; border-radius: 12px 0 0 12px; color: #fff; text-decoration: none; background: var(--t); transition: margin-left .28s cubic-bezier(.2, .8, .2, 1); } .ds-thumb:hover { margin-left: 10px; } .ds-thumb[aria-current] { margin-left: 0; box-shadow: -10px 0 0 -4px var(--page, #f6f7f3); } .ds-thumb:focus-visible { outline: 2px solid var(--gilt, #c9a227); outline-offset: 2px; } .ds-num { font: 700 12px \"Archivo Narrow\", \"Arial Narrow\", sans-serif; letter-spacing: .2em; } .ds-label { font: 700 15px/1.1 \"Archivo Narrow\", \"Arial Narrow\", sans-serif; letter-spacing: .14em; text-transform: uppercase; } .ds-thumb small { font: 500 12px/1.3 \"Archivo Narrow\", \"Arial Narrow\", sans-serif; color: color-mix(in srgb, #fff 90%, var(--t)); } .ds-ribbon { position: absolute; top: -7px; right: 16px; width: 12px; height: 40px; background: var(--gilt, #c9a227); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%); } @media (prefers-reduced-motion: reduce) { .ds-thumb { transition: none; } }"
+    },
+    {
+      "name": "Chapter Band",
+      "kind": "custom",
+      "refersTo": "thumb-tab",
+      "description": "Entry opening in the volume ink, with sibling entries as tabs opening onto the page.",
+      "html": "<header class=\"ds-band\"><p class=\"ds-vol\"><span>Vol. II</span>Peoples</p><h1>The Cords of Tantalos</h1><ol><li><a href=\"#\">Species</a></li><li><a href=\"#\" aria-current=\"page\">The Cords of Tantalos</a></li><li><a href=\"#\">Eon-Kin</a></li></ol></header>",
+      "css": ".ds-band { --vol: var(--peoples, #2f6b4f); display: grid; grid-template-columns: 220px minmax(0, 1fr); align-items: end; column-gap: 32px; row-gap: 14px; background: var(--vol); color: #fff; padding: 34px 40px 0 28px; } .ds-vol { margin: 0 0 6px; display: flex; flex-direction: column; font: 700 30px/1 \"Spectral SC\", \"Palatino Linotype\", Georgia, serif; letter-spacing: .03em; } .ds-vol span { font: 700 12px/1.6 \"Archivo Narrow\", \"Arial Narrow\", sans-serif; letter-spacing: .24em; text-transform: uppercase; } .ds-band h1 { margin: 0 0 4px; font: 700 clamp(30px, 3.4vw, 48px)/1.08 \"Spectral SC\", \"Palatino Linotype\", Georgia, serif; letter-spacing: .02em; } .ds-band ol { grid-column: 2; list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0 4px; } .ds-band a { display: block; padding: 8px 12px 9px; color: #fff; text-decoration: none; font: 600 14px \"Archivo Narrow\", \"Arial Narrow\", sans-serif; letter-spacing: .03em; border-radius: 3px 3px 0 0; } .ds-band a:hover { background: color-mix(in srgb, #000 16%, var(--vol)); } .ds-band a[aria-current] { background: var(--page, #f6f7f3); color: var(--ink, #16202b); } .ds-band a:focus-visible { outline: 2px solid var(--gilt, #c9a227); outline-offset: 2px; }"
+    },
+    {
+      "name": "Reference Table",
+      "kind": "custom",
+      "refersTo": "table-head",
+      "description": "Timetable ranking: ink rules, reversed head, weight not size.",
+      "html": "<div class=\"ds-table\"><table><thead><tr><th>Tier</th><th>Cost</th><th>Effect</th></tr></thead><tbody><tr><td>T1</td><td>2 EP</td><td>Speak into a mind within <strong>60 ft</strong></td></tr><tr><td>T2</td><td>4 EP</td><td>Link four targets</td></tr></tbody></table></div>",
+      "css": ".ds-table { --vol: var(--arcana, #6b3f8f); border-top: 2px solid var(--ink, #16202b); border-bottom: 1px solid var(--ink, #16202b); overflow-x: auto; } .ds-table table { border-collapse: collapse; width: 100%; font: 500 15px/1.45 \"Archivo Narrow\", \"Arial Narrow\", sans-serif; font-variant-numeric: tabular-nums; color: var(--ink, #16202b); } .ds-table th { text-align: left; font-weight: 700; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: #fff; background: var(--ink, #16202b); padding: 6px 12px; } .ds-table td { padding: 8px 12px; border-top: 1px solid var(--rule, #d6dbd3); vertical-align: top; } .ds-table td:first-child { font-weight: 700; } .ds-table td strong { color: var(--vol); } .ds-table tbody tr:hover td { background: color-mix(in srgb, var(--vol) 6%, var(--page, #f6f7f3)); }"
+    },
+    {
+      "name": "Skill Record",
+      "kind": "custom",
+      "refersTo": "record-cost-stamp",
+      "description": "A skill set as a dictionary record: headword, cost stamp, effect, stat line.",
+      "html": "<div class=\"ds-record\"><div class=\"ds-rec-head\"><span class=\"ds-rec-name\">#1 Connective Mind</span><span class=\"ds-stamp\">EP 6</span></div><p>Accessing the mind of a sentient being, the caster may use telepathy to speak into their mind.</p><div class=\"ds-stats\"><span><b>Cast Time</b> Instant</span><span><b>Range</b> 60 Foot Radius Self</span><span><b>Cooldown</b> N/A</span></div></div>",
+      "css": ".ds-record { --vol: var(--arcana, #6b3f8f); border-top: 1px solid var(--rule, #d6dbd3); padding: 14px 0 16px; color: var(--ink, #16202b); } .ds-rec-head { display: flex; align-items: baseline; gap: 18px; } .ds-rec-name { font: 700 19px/1.25 \"Spectral SC\", \"Palatino Linotype\", Georgia, serif; letter-spacing: .02em; } .ds-stamp { font: 700 12px/1 \"Archivo Narrow\", \"Arial Narrow\", sans-serif; letter-spacing: .14em; text-transform: uppercase; color: #fff; background: var(--vol); padding: 4px 7px 3px; } .ds-record p { margin: 2px 0 4px; font: 400 17px/1.6 \"Source Serif 4\", Georgia, serif; } .ds-stats { display: flex; flex-wrap: wrap; gap: 4px 18px; font: 400 13px/1.5 \"Archivo Narrow\", \"Arial Narrow\", sans-serif; letter-spacing: .03em; } .ds-stats b { font-weight: 700; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--mute, #5b6570); margin-right: 3px; }"
+    },
+    {
+      "name": "Contents Entry",
+      "kind": "custom",
+      "refersTo": "table-cell",
+      "description": "Home-page volume head and entries with dotted leaders to § counts.",
+      "html": "<section class=\"ds-volume\"><h2><span>Vol. V</span>Rules</h2><p>Levelling, rolls, combat, conditions and curses.</p><ol><li><a href=\"#\"><span class=\"ds-t\">Rolls</span><span class=\"ds-dots\"></span><span class=\"ds-c\">6 §</span></a></li><li><a href=\"#\"><span class=\"ds-t\">Combat</span><span class=\"ds-dots\"></span><span class=\"ds-c\">11 §</span></a></li></ol></section>",
+      "css": ".ds-volume { --vol: var(--rules, #a8561a); color: var(--ink, #16202b); font-family: \"Source Serif 4\", Georgia, serif; } .ds-volume h2 { margin: 0; display: flex; align-items: baseline; gap: 14px; padding: 12px 16px; background: var(--vol); color: #fff; font: 700 26px/1.1 \"Spectral SC\", \"Palatino Linotype\", Georgia, serif; letter-spacing: .03em; } .ds-volume h2 span { font: 700 12px \"Archivo Narrow\", \"Arial Narrow\", sans-serif; letter-spacing: .22em; text-transform: uppercase; } .ds-volume p { margin: 10px 0 6px; color: var(--ink-2, #3a4450); font-style: italic; font-size: 16px; } .ds-volume ol { list-style: none; margin: 0; padding: 0; } .ds-volume a { display: flex; align-items: baseline; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--rule-soft, #e4e8e1); color: inherit; text-decoration: none; font-size: 18px; } .ds-volume a:hover .ds-t { color: var(--vol); } .ds-volume a:focus-visible { outline: 2px solid var(--gilt, #c9a227); outline-offset: 2px; } .ds-dots { flex: 1; border-bottom: 1px dotted #a9b0a8; transform: translateY(-4px); min-width: 20px; } .ds-c { font: 600 13px \"Archivo Narrow\", \"Arial Narrow\", sans-serif; letter-spacing: .08em; color: var(--mute, #5b6570); font-variant-numeric: tabular-nums; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Thumb-Indexed Compendium",
+    "overview": "The wiki is set as a bound reference work on Tantalos: a teal book-cloth cover with a gilt rule and crescent stamp, cool India-paper leaves, and six coloured thumb tabs cut into the right edge, one per volume (Lore, Peoples, Aspects, Arcana, Rules, Catalogs). Every surface behaves like a page in that book. A volume colour owns its chapter band, its thumb tab, its section numbers and its list markers; nothing else borrows it.\n\nDensity is that of a good encyclopedia: a ~68ch reading column, a contents margin to its left, a running head with guide words above it, and sections numbered with § so any passage can be cited at the table. Entries are separated by space and hairline rules, never by boxes. Reference tables carry their hierarchy in weight, case and a reversed ink head, never in size.\n\nThe page is a single committed light theme (`color-scheme: light`). There is no dark variant by design: it is a book read under lamplight or beside the game, and the previous dark docs-site look is the confirmed rejection. Grey page trees, dark themes and floating cards are the anti-references.",
+    "keyCharacteristics": [
+      "Cloth-and-gilt masthead, colophon and title page; paper everywhere else.",
+      "Six volume colours, each scoped to one volume through a single `--vol` variable.",
+      "Thumb index as primary navigation: right edge on desktop, fixed bottom strip on phones.",
+      "§ numbering hung in the left gutter at 1101px and wider.",
+      "Hairlines and ink rules instead of cards; flat paper with one floating layer (search results).",
+      "Three faces with fixed jobs: Spectral SC headwords, Source Serif 4 text, Archivo Narrow labels and data."
+    ],
+    "rules": [
+      {
+        "name": "The One Volume Rule",
+        "body": "Volume colour is set once per page through `--vol` (a `v-*` class on body or on a home-page volume section) and never hard-coded on a component. A page wears exactly one volume ink; the home contents and the thumb index are the only places all six appear together.",
+        "section": "colors"
+      },
+      {
+        "name": "The Gilt Is Metal Rule",
+        "body": "Gilt appears as rules, the seal, the ribbon, focus and the one primary action. It never fills a text area or becomes a body-text colour on paper.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Light Page Rule",
+        "body": "There is no dark variant. Do not add `prefers-color-scheme: dark` styles; the cloth surfaces already supply the dark notes.",
+        "section": "colors"
+      },
+      {
+        "name": "The Three Jobs Rule",
+        "body": "Spectral SC names things, Source Serif 4 tells things, Archivo Narrow labels and counts things. A face never takes another face's job.",
+        "section": "typography"
+      },
+      {
+        "name": "The Weight Not Size Rule",
+        "body": "In tables and records, rank by weight, case and reversal (ink head with white type, a volume-coloured cost stamp), never by enlarging type.",
+        "section": "typography"
+      },
+      {
+        "name": "The Section Mark Rule",
+        "body": "h2 and h3 carry a § number (§3, §3.1) in Archivo Narrow 700 in the volume ink. From 1101px it hangs in the left gutter at 14px; below that it sits inline at 0.62em.",
+        "section": "typography"
+      },
+      {
+        "name": "The No Cards Rule",
+        "body": "Entries, volumes, records and results are separated by space and hairlines (rule, rule-soft) or a 2px ink head rule. Never wrap content in a bordered, shadowed or rounded box.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** scope every volume colour through `--vol` and the `v-*` / `t-*` classes; components read `var(--vol)`.",
+      "**Do** separate content with space and the rule / rule-soft hairlines, and head tables and the pager with a 2px ink rule.",
+      "**Do** rank table and record information by weight, case and reversal: an ink head row, a volume-coloured cost stamp, uppercase 11-12px labels.",
+      "**Do** keep every new heading numbered with § and let it hang in the gutter at 1101px and wider.",
+      "**Do** keep gilt to 3px rules, the seal, the ribbon, focus and the single primary action.",
+      "**Do** keep phone navigation in the fixed bottom thumb strip and let the masthead scroll away."
+    ],
+    "donts": [
+      "**Don't** add a dark theme or `prefers-color-scheme: dark` styles; the single light page is deliberate.",
+      "**Don't** wrap entries, volumes, records or results in cards (bordered, rounded or shadowed boxes).",
+      "**Don't** enlarge type to signal importance inside tables or records.",
+      "**Don't** use a volume colour outside its own volume, or put two volume inks on one entry page.",
+      "**Don't** add shadows beyond the search results sheet and the field focus halo.",
+      "**Don't** set body text in Spectral SC or Archivo Narrow, or headwords in Source Serif 4."
+    ]
+  }
+}

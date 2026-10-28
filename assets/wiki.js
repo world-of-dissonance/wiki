@@ -1,4 +1,4 @@
-// Search over search.json, the mobile contents drawer, and the "on this page" highlight.
+// Search, picture strips, § links, the running head's guide words and the last-read ribbon.
 (() => {
   const q = document.getElementById("q"), list = document.getElementById("results");
   let index = null, hits = [], sel = -1;
@@ -61,12 +61,6 @@
     });
   }
 
-  const menu = document.getElementById("menu"), nav = document.getElementById("nav");
-  if (menu && nav) {
-    menu.addEventListener("click", () => { const open = nav.classList.toggle("open"); menu.setAttribute("aria-expanded", open); });
-    nav.addEventListener("click", e => { if (e.target.closest("a")) { nav.classList.remove("open"); menu.setAttribute("aria-expanded", false); } });
-  }
-
   // picture strips: arrows, arrow keys and the "2 / 5" count
   document.querySelectorAll(".gallery .strip").forEach(strip => {
     const fig = strip.parentElement, n = strip.children.length;
@@ -84,22 +78,96 @@
     sync();
   });
 
-  // heading anchors and the current section in "On this page"
-  document.querySelectorAll(".prose :is(h2,h3,h4)[id]").forEach(h => {
-    const a = document.createElement("a"); a.className = "anchor"; a.href = "#" + h.id; a.textContent = "#"; a.setAttribute("aria-label", "Link to this section");
-    h.prepend(a);
+  // § numbers are the section links: click one to get a link you can share ("see §4.3")
+  document.querySelectorAll(".text :is(h2,h3)[id] > .sec").forEach(sec => {
+    const a = document.createElement("a");
+    a.className = "sec"; a.href = "#" + sec.parentElement.id; a.textContent = sec.textContent;
+    a.setAttribute("aria-label", `Link to ${sec.textContent}`);
+    sec.replaceWith(a);
   });
-  const tocLinks = [...document.querySelectorAll(".toc a")];
-  if (tocLinks.length && "IntersectionObserver" in window) {
-    const byId = new Map(tocLinks.map(a => [decodeURIComponent(a.hash.slice(1)), a]));
+
+  // where you are: highlight in "In this entry", guide words in the running head, and the last-read ribbon
+  const store = {
+    get() { try { return JSON.parse(localStorage.getItem("wod-last") || "null"); } catch { return null; } },
+    set(v) { try { localStorage.setItem("wod-last", JSON.stringify(v)); } catch {} },
+  };
+  const body = document.body, page = body.dataset.page;
+  const marginLinks = [...document.querySelectorAll(".margin a")];
+  const guide = document.querySelector(".run .guide");
+  const heads = [...document.querySelectorAll(".text h2[id], .text h3[id]")];
+  function markSection(h) {
+    const id = h ? h.id : "";
+    marginLinks.forEach(a => a.classList.toggle("on", decodeURIComponent(a.hash.slice(1)) === id));
+    if (guide && h) guide.textContent = h.textContent.replace(/\s+/g, " ").trim();
+    if (page) store.set({ page, id, title: body.dataset.title, vol: body.dataset.vol, section: h ? h.textContent.replace(/\s+/g, " ").trim() : "" });
+  }
+  if (heads.length && "IntersectionObserver" in window) {
     const seen = new Set();
     const io = new IntersectionObserver(es => {
-      es.forEach(e => e.isIntersecting ? seen.add(e.target.id) : seen.delete(e.target.id));
-      const first = [...byId.keys()].find(id => seen.has(id));
-      if (first) tocLinks.forEach(a => a.classList.toggle("on", a === byId.get(first)));
-    }, { rootMargin: "-80px 0px -60% 0px" });
-    byId.forEach((_, id) => { const el = document.getElementById(id); if (el) io.observe(el); });
+      es.forEach(e => e.isIntersecting ? seen.add(e.target) : seen.delete(e.target));
+      const top = heads.find(h => seen.has(h));
+      if (top) markSection(top);
+      else {  // between headings: the last one above the fold
+        const above = heads.filter(h => h.getBoundingClientRect().top < 120).pop();
+        if (above) markSection(above);
+      }
+    }, { rootMargin: "0px 0px -70% 0px" });
+    heads.forEach(h => io.observe(h));
+  } else if (page) markSection(null);
+
+  const last = store.get();
+  if (last && last.vol) {
+    const tab = document.querySelector(`.thumb[data-vol="${last.vol}"]`);
+    if (tab) { tab.classList.add("last"); tab.title = `You were reading ${last.title}`; }
+    const resume = document.querySelector(".btn.resume");
+    if (resume && last.page) {
+      resume.href = last.page + (last.id ? "#" + last.id : "");
+      resume.textContent = `Continue: ${last.title}`;
+      resume.hidden = false;
+    }
   }
-  const cur = document.querySelector(".nav [aria-current]");
-  if (cur) cur.scrollIntoView({ block: "center" });
+
+  // glossary terms: a definition on hover or first tap; a second tap (or a click on desktop) opens the entry
+  let gloss = null, pop = null, openFor = null, hideTimer = 0;
+  const loadGloss = () => gloss || (gloss = fetch("glossary.json").then(r => r.json()).catch(() => ({})));
+  function hidePop() { if (pop) pop.hidden = true; openFor = null; }
+  async function showPop(a) {
+    const g = (await loadGloss())[a.dataset.term];
+    if (!g) return;
+    if (!pop) {
+      pop = document.createElement("div"); pop.className = "pop"; pop.id = "term-pop"; pop.setAttribute("role", "tooltip");
+      pop.addEventListener("mouseenter", () => clearTimeout(hideTimer));
+      pop.addEventListener("mouseleave", () => { hideTimer = setTimeout(hidePop, 160); });
+      document.body.append(pop);
+    }
+    pop.replaceChildren();
+    const t = document.createElement("strong"); t.textContent = g.t;
+    const d = document.createElement("p"); d.textContent = g.d;
+    const more = document.createElement("a"); more.href = a.getAttribute("href"); more.textContent = `Read it in ${g.p}`;
+    pop.append(t, d, more);
+    pop.hidden = false; openFor = a; a.setAttribute("aria-describedby", "term-pop");
+    const r = a.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
+    const below = r.bottom + 8 + h < innerHeight;
+    pop.style.left = Math.max(12, Math.min(innerWidth - w - 12, r.left)) + "px";
+    pop.style.top = (below ? r.bottom + 8 : Math.max(8, r.top - h - 8)) + "px";
+  }
+  document.addEventListener("mouseover", e => {
+    const a = e.target.closest("a.term");
+    if (a && a !== openFor) { clearTimeout(hideTimer); showPop(a); }
+  });
+  document.addEventListener("mouseout", e => {
+    if (e.target.closest("a.term")) hideTimer = setTimeout(hidePop, 160);
+  });
+  document.addEventListener("focusin", e => { const a = e.target.closest("a.term"); if (a) showPop(a); });
+  document.addEventListener("click", e => {
+    const a = e.target.closest("a.term");
+    if (a && matchMedia("(hover: none)").matches && openFor !== a) { e.preventDefault(); showPop(a); return; }
+    if (!a && pop && !pop.contains(e.target)) hidePop();
+  });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") hidePop(); });
+  addEventListener("scroll", () => { if (openFor && !matchMedia("(hover: none)").matches) hidePop(); }, { passive: true });
+
+  // phones: "In this entry" starts folded so the text comes first
+  const margin = document.querySelector(".margin");
+  if (margin && matchMedia("(max-width: 820px)").matches) margin.open = false;
 })();

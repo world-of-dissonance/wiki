@@ -31,7 +31,9 @@ MAKER_URL = "https://world-of-dissonance.github.io/wod-character-maker/"
 # Kept out of search engines until the reveal. Set to False to let the wiki be found.
 HIDDEN = True
 ROOT = Path(__file__).resolve().parent
-GENERATOR_VERSION = "3"
+# changes to the stylesheet or script get a new URL, so browsers never run a stale copy against new pages
+ASSET_V = hashlib.sha256((ROOT / "assets/wiki.css").read_bytes() + (ROOT / "assets/wiki.js").read_bytes()).hexdigest()[:10]
+GENERATOR_VERSION = "7"
 
 
 # ---------- fetching ----------
@@ -181,8 +183,8 @@ def gallery_html(files: list[str]) -> str:
         return f'<figure class="gallery single">{imgs}</figure>'
     return (f'<figure class="gallery" aria-label="{len(files)} pictures">'
             f'<div class="strip" tabindex="0">{imgs}</div>'
-            f'<button class="prev" type="button" aria-label="Previous picture">&#8249;</button>'
-            f'<button class="next" type="button" aria-label="Next picture">&#8250;</button>'
+            f'<button class="prev" type="button" aria-label="Previous picture">{ICON_PREV}</button>'
+            f'<button class="next" type="button" aria-label="Next picture">{ICON_NEXT}</button>'
             f'<figcaption class="count">1 / {len(files)}</figcaption></figure>')
 
 
@@ -209,9 +211,16 @@ def slugify(s: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", s.lower().replace("'", "").replace("’", "")).strip("-") or "section"
 
 
+BOLD_LINE = re.compile(r"\s*\*\*([^*]{2,60})\*\*\s*")
+
+
 def clean(md: str, images: dict[str, str]) -> str:
     """The doc uses '#' for emphasis paragraphs and empty spacer headings; keep real headings, demote the rest."""
     out = []
+    # tabs written without headings mark their sections with bold lines; those become sections (needs two or more)
+    real_heads = any(re.match(r"^#{1,6}\s+\S", l) and plain(re.sub(r"^#+", "", l)) for l in md.splitlines())
+    promote = not real_heads and sum(1 for l in md.splitlines() if BOLD_LINE.fullmatch(l)) >= 2
+    branches = {n.lower() for n in tree_paths(md)}
     for line in md.splitlines():
         m = re.match(r"^(\[image\d+\]):\s*<data:", line)
         if m:
@@ -233,9 +242,18 @@ def clean(md: str, images: dict[str, str]) -> str:
             level = min(len(h.group(1)) + 1, 4)  # the page title is the only h1
             if re.match(r"\[T\d+\]", p):
                 level = 4
-            elif p.lower() == "main path":
+            elif p.lower() == "main path" or (level == 4 and p.lower() in branches):
                 level = 3
             out.append(f"{'#' * level} {html.escape(p, quote=False)}")
+            continue
+        b = BOLD_LINE.fullmatch(line)
+        if b and re.match(r"\[T\d+\]", plain(b.group(1))):  # "**[T1]  Puppet:**" is a tier like the headed ones
+            out.append(f"#### {html.escape(re.sub(r'\s+', ' ', plain(b.group(1))), quote=False)}")
+            continue
+        # a label ending in a hard break ("**Bleeding:**  ") is one line of a list, not a section title
+        b = b if promote and not line.endswith("  ") else None
+        if b and plain(b.group(1)):
+            out.append(f"## {html.escape(plain(b.group(1)), quote=False)}")
             continue
         if re.match(r"^(\t| {4,})", line) and not re.match(r"^\s*([*+-]|\d+\.)\s", line):
             line = line.lstrip()  # the doc's hand-spaced diagrams would otherwise become code blocks
@@ -268,7 +286,8 @@ def extract_images(md: str, slug: str, out_dir: Path) -> dict[str, str]:
 # ---------- rendering ----------
 
 def render(tab: dict, slug: str, out_dir: Path) -> tuple[str, list[dict], str]:
-    source, galleries, images = tab["md"], {}, {}
+    # a soft line break inside a table cell arrives as \v, which splitlines() would treat as a new row
+    source, galleries, images = tab["md"].replace("\x0b", "@@BR@@"), {}, {}
     if tab.get("imgs"):
         source, galleries = place_images(source, tab["imgs"], slug, out_dir)
     else:
@@ -277,16 +296,213 @@ def render(tab: dict, slug: str, out_dir: Path) -> tuple[str, list[dict], str]:
     body = md.convert(clean(source, images))
     for marker, files in galleries.items():
         body = body.replace(f"<p>{marker}</p>", gallery_html(files))
+    body = body.replace("@@BR@@", "<br>")
+
+    # the doc's one-row tables (every skill) arrive as a header plus an empty row: set them as a single record
+    def record(m):
+        cells = re.findall(r"<th[^>]*>(.*?)</th>", m.group(1), re.S)
+        # line breaks only matter in the effect text; elsewhere they join words ("RadiusSelf")
+        cells = [c if i == 2 else re.sub(r"\s*<br>\s*", " ", c).strip() for i, c in enumerate(cells)]
+        tds = []
+        for i, c in enumerate(cells):
+            if i >= 3:
+                # the doc's blank records drop the colon ("Cast Time"), so known labels match without it
+                c = re.sub(r"^(Cast Time|Lasts For|Range|Cooldown|[^:<]{1,24}(?=:)):?\s*", r"<b>\1</b> ", c)
+            blank = ' class="blank"' if i == 1 and not re.search(r"\d", c) else ""
+            tds.append(f"<td{blank}>{c}</td>")
+        return '<table class="record"><tbody><tr>' + "".join(tds) + "</tr></tbody></table>"
+    body = re.sub(r"<table>\s*<thead>(.*?)</thead>\s*<tbody>\s*<tr>(?:\s*<td[^>]*></td>)+\s*</tr>\s*</tbody>\s*</table>", record, body, flags=re.S)
     body = re.sub(r"<table>", '<div class="table-wrap"><table>', body).replace("</table>", "</table></div>")
+    body = body.replace('<table class="record">', '<div class="table-wrap record-wrap"><table class="record">')
     body = body.replace("<img ", '<img loading="lazy" ')
+    body = tree_diagrams(tab["md"], fold_blanks(body))
     toc = [{"id": t["id"], "name": t["name"], "children": [{"id": c["id"], "name": c["name"]} for c in t.get("children", [])]} for t in md.toc_tokens]
-    text = re.sub(r"<[^>]+>", " ", body)
+    text = re.sub(r"<[^>]+>", " ", readable(body))
     return body, toc, html.unescape(re.sub(r"\s+", " ", text)).strip()
+
+
+
+# ---------- organizing: skill trees, unwritten slots, glossary ----------
+
+def tree_paths(md: str) -> dict[str, list[str]]:
+    """The doc sums up every skill path as "NAME: tier -> tier -> tier"; those lines are the trees' source of truth."""
+    paths: dict[str, list[str]] = {}
+    for line in md.splitlines():
+        if "\\-\\>" not in line and "->" not in line:
+            continue
+        line = re.sub(r"\\(.)", r"\1", line)
+        line = re.sub(r"[*↘↗↕^|\\/]", " ", line)
+        for m in re.finditer(r"([A-Z][A-Z ]{1,20}[A-Z]):\s*(.*?)(?=\s[A-Z][A-Z ]{1,20}[A-Z]:|$)", line):
+            tiers = [t.strip(" .-") for t in re.split(r"->|-(?=>)|\s{2,}", m.group(2)) if t.strip(" .->")]
+            tiers = [re.sub(r"\s+", " ", t) for t in tiers if not re.fullmatch(r"[A-Z ]+", t)][:4]
+            if tiers:
+                paths.setdefault(m.group(1).strip(), tiers)
+    return paths
+
+
+def fold_blanks(body: str) -> str:
+    """Runs of unwritten skill slots (#3 EP Cast Time … with no effect) fold into one line you can open."""
+    blank = (r'<div class="table-wrap record-wrap"><table class="record"><tbody><tr><td>[^<]*</td><td[^>]*>[^<]*</td><td></td>'
+             r'.*?</tr></tbody></table></div>')
+
+    def fold(m):
+        run = m.group(0).strip()
+        nums = re.findall(r"<tr><td>([^<]*)</td>", run)
+        n = len(nums)
+        span = nums[0] if n == 1 else f"{nums[0]}–{nums[-1]}"
+        label = f"{n} unwritten slot{'s' if n != 1 else ''}"
+        return f'<details class="unwritten"><summary>{label} <span>{html.escape(span)}</span></summary>{run}</details>\n'
+    return re.sub(rf"(?:{blank}\s*)+", fold, body, flags=re.S)
+
+
+def named(name: str, paths: dict) -> str | None:
+    """The path a heading names, allowing the doc's spelling slips ("DECIEVE" for DECEIVE)."""
+    if name in paths:
+        return name
+    close = difflib.get_close_matches(name, list(paths), n=1, cutoff=0.8)
+    return close[0] if close else None
+
+
+def tree_diagrams(md: str, body: str) -> str:
+    """A diagram under each skill tree's heading: the main path, then each branch, tier by tier, linked to the entries."""
+    paths = tree_paths(md)
+    if not paths:
+        return body
+    parts = re.split(r'(<h2 id="[^"]+">.*?</h2>)', body)
+    for i in range(1, len(parts), 2):
+        tree = named(strip(parts[i]).upper(), paths)
+        if not tree:
+            continue
+        section = parts[i + 1]
+        h3s = [(m.group(1), strip(m.group(2)), m.start()) for m in re.finditer(r'<h3 id="([^"]+)">(.*?)</h3>', section)]
+
+        def region(start):
+            nxt = [s for _, _, s in h3s if s > start]
+            return section[start:nxt[0] if nxt else len(section)]
+
+        def row(label, anchor, tiers, start, main=False):
+            reg = region(start) if start is not None else ""
+            nodes = []
+            for n, name in enumerate(tiers, 1):
+                hit = re.search(rf'<h4 id="([^"]+)">\[T{n}\]\s*{re.escape(name)}\s*</h4>', reg, re.I)
+                href = f"#{hit.group(1)}" if hit else (f"#{anchor}" if anchor else "")
+                inner = f"<span>T{n}</span>{html.escape(name)}"
+                nodes.append(f'<li><a href="{href}">{inner}</a></li>' if href else f"<li><b>{inner}</b></li>")
+            name = f'<a class="pname" href="#{anchor}">{html.escape(label)}</a>' if anchor else f'<span class="pname">{html.escape(label)}</span>'
+            return f'<div class="path{" main" if main else ""}">{name}<ol>{"".join(nodes)}</ol></div>'
+
+        main = next(((a, s) for a, t, s in h3s if t.lower() == "main path"), (None, None))
+        rows = [row("Main path", main[0], paths[tree], main[1], main=True)]
+        for a, t, s in h3s:
+            b = named(t.upper(), paths)
+            if b and b != tree:
+                rows.append(row(t, a, paths[b], s))
+        cap = f"{tree.title()} · main path and {len(rows) - 1} branch{'es' if len(rows) != 2 else ''}"
+        parts[i] += f'\n<figure class="tree" aria-label="{html.escape(tree.title())} skill tree"><figcaption>{cap}</figcaption>{"".join(rows)}</figure>\n'
+    return "".join(parts)
+
+
+def collect_terms(pages: list[dict]) -> dict[str, dict]:
+    """Terms the doc defines as a paragraph that opens in bold ("Burning: …", "One [Instant]: …"); the first definition wins."""
+    gloss: dict[str, dict] = {}
+    for p in pages:
+        if p["empty"]:
+            continue
+        ids = set(re.findall(r'id="([^"]+)"', p["body"]))
+
+        def define(m):
+            label = strip(m.group(1)).rstrip(":").strip()
+            rest = strip(m.group(2)).lstrip(":").strip()
+            bracket = re.search(r"\[([^\]]{2,30})\]", label)
+            term = (bracket.group(1) if bracket else label).strip()
+            key = term.lower()
+            if (len(rest) < 20 or len(term) > 30 or key in gloss or re.match(r"t\d", key) or ":" in key
+                    or re.search(r"example|appear|types and|forms of", key)):
+                return m.group(0)
+            tid = "term-" + slugify(term)
+            if tid in ids:
+                return m.group(0)
+            ids.add(tid)
+            gloss[key] = {"t": term, "d": clip(rest, 320), "u": f'{p["file"]}#{tid}', "p": p["title"]}
+            return f'<p id="{tid}">' + m.group(0)[3:]
+        p["body"] = re.sub(r"<p><strong>(.{2,60}?)</strong>(.*?)</p>", define, p["body"], flags=re.S)
+
+    # skills are terms too ("[Connective Net]"): a written skill record gets an id and its effect as the definition
+    for p in pages:
+        if p["empty"]:
+            continue
+
+        def skill(m):
+            name = re.sub(r"^#\d+\s*", "", strip(m.group(1)))
+            effect = strip(m.group(2))
+            key, sid = name.lower(), "skill-" + slugify(name)
+            if not name or len(effect) < 20 or key in gloss or f'id="{sid}"' in p["body"]:
+                return m.group(0)
+            gloss[key] = {"t": name, "d": clip(effect, 320), "u": f'{p["file"]}#{sid}', "p": p["title"]}
+            return m.group(0).replace('<div class="table-wrap record-wrap">', f'<div class="table-wrap record-wrap" id="{sid}">', 1)
+        p["body"] = re.sub(r'<div class="table-wrap record-wrap"><table class="record"><tbody><tr><td>(.*?)</td><td[^>]*>.*?</td><td>(.*?)</td>',
+                           skill, p["body"], flags=re.S)
+
+    # last, short headings followed by text (the conditions on Elements, Effects, Conditions are headed this way)
+    for p in pages:
+        if p["empty"]:
+            continue
+        for m in re.finditer(r'<h([2-4]) id="([^"]+)">(.*?)</h\1>(.*?)(?=<h[1-4][ >]|$)', p["body"], re.S):
+            term = re.sub(r"^§[\d.]+\s*", "", strip(m.group(3)))
+            rest = strip(readable(m.group(4)))
+            key = term.lower()
+            if term.startswith("[") or len(term) > 30 or len(rest) < 40 or key in gloss or key == "main path":
+                continue
+            gloss[key] = {"t": term, "d": clip(rest, 320), "u": f'{p["file"]}#{m.group(2)}', "p": p["title"]}
+    return gloss
+
+
+def link_terms(body: str, gloss: dict[str, dict], file: str) -> str:
+    """Every [Bracketed Term] the glossary knows becomes a link with a hover definition (not inside headings or links)."""
+    out, in_a, in_h, defining = [], 0, 0, None
+    for tok in re.split(r"(<[^>]+>)", body):
+        if tok.startswith("<"):
+            if re.match(r"<a[\s>]", tok):
+                in_a += 1
+            elif tok == "</a>":
+                in_a = max(0, in_a - 1)
+            elif re.match(r"<h[1-6][\s>]", tok):
+                in_h += 1
+            elif re.match(r"</h[1-6]>", tok):
+                in_h = max(0, in_h - 1)
+            m = re.match(r'<p id="(term-[^"]+)">', tok)
+            if m:
+                defining = m.group(1)
+            elif tok == "</p>":
+                defining = None
+            out.append(tok)
+            continue
+        if in_a or in_h or "[" not in tok:
+            out.append(tok)
+            continue
+
+        def link(m):
+            key = html.unescape(m.group(1)).strip().lower()
+            g = gloss.get(key) or gloss.get(key.removesuffix("s"))  # "[Reactions]" → Reaction
+            if not g:
+                return m.group(0)
+            page, _, tid = g["u"].partition("#")
+            if tid == defining and page == file:
+                return m.group(0)
+            href = f"#{tid}" if page == file else g["u"]
+            return f'<a class="term" href="{href}" data-term="{html.escape(g["t"].lower())}">{m.group(0)}</a>'
+        out.append(re.sub(r"\[([^\[\]<]{2,30})\]", link, tok))
+    return "".join(out)
+
+
+def readable(body: str) -> str:
+    """Body without the parts that are navigation, not text (diagrams, folded blank slots), for search and summaries."""
+    return re.sub(r'<details class="unwritten">.*?</details>|<figure class="tree".*?</figure>', " ", body, flags=re.S)
 
 
 def sections_for_search(body: str, page: dict) -> list[dict]:
     """Search entries: one per heading, with the text that follows it."""
-    parts = re.split(r'(<h[2-4] id="([^"]+)">(.*?)</h[2-4]>)', body)
+    parts = re.split(r'(<h[2-4] id="([^"]+)">(.*?)</h[2-4]>)', readable(body))
     out = [{"p": page["title"], "h": page["title"], "u": page["file"], "x": strip(parts[0])[:600]}]
     section = ""
     for i in range(1, len(parts) - 1, 4):
@@ -315,12 +531,20 @@ def build(tabs: list[dict], out: Path) -> dict:
         slug = "introduction" if t["id"] == "t.0" else slugify(title)
         while any(p["slug"] == slug for p in pages):
             slug += "-2"
-        page = {"title": title, "slug": slug, "file": f"{slug}.html", "depth": len(t["path"]) - 1, "empty": not t["md"].strip()}
+        page = {"title": title, "slug": slug, "file": f"{slug}.html", "depth": len(t["path"]) - 1, "empty": not t["md"].strip(),
+                "vol": volume_of(title)}
         if page["empty"]:
             page.update(body="", toc=[], text="")
         else:
             page["body"], page["toc"], page["text"] = render(t, slug, out)
+            number_sections(page)
         pages.append(page)
+
+    gloss = collect_terms(pages)
+    for p in pages:
+        if not p["empty"]:
+            p["body"] = link_terms(p["body"], gloss, p["file"])
+    (out / "glossary.json").write_text(json.dumps(gloss, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
     search = []
     for p in pages:
@@ -336,10 +560,65 @@ def build(tabs: list[dict], out: Path) -> dict:
     (out / "build.json").write_text(json.dumps({"hash": digest, "synced": synced, "pages": len(pages)}), encoding="utf-8")
     (out / "robots.txt").write_text("User-agent: *\nDisallow: /\n" if HIDDEN else "User-agent: *\nAllow: /\n")
     (out / ".nojekyll").write_text("")
-    return {"hash": digest, "pages": len(pages), "search": len(search)}
+    return {"hash": digest, "pages": len(pages), "search": len(search), "terms": len(gloss)}
 
 
 # ---------- templates ----------
+# The wiki is set as a bound compendium: six volumes, each with a coloured thumb tab, § numbers for citing sections.
+
+VOLUMES = [  # (key, name, numeral, words that place a doc tab in it)
+    ("lore", "Lore", "I", ()),
+    ("peoples", "Peoples", "II", ("cords", "species", "eon-kin")),
+    ("aspects", "Aspects", "III", ("aspect", "signature")),
+    ("arcana", "Arcana", "IV", ("arcana", "skill")),
+    ("rules", "Rules", "V", ("levelling", "stat", "action", "roll", "combat", "element", "effect", "condition", "trait", "affliction", "curse")),
+    ("catalogs", "Catalogs", "VI", ("catalog",)),
+]
+VOLUME_BLURB = {
+    "lore": "History, regions, stories and the building of Lychgate.",
+    "peoples": "The races of Tantalos and the Eon-Kin.",
+    "aspects": "Astra, Fibero, Eternum and the four signatures.",
+    "arcana": "Wonder, Will, Weapon and every skill tree.",
+    "rules": "Levelling, rolls, combat, conditions and curses.",
+    "catalogs": "Mundane items, trinkets and relics.",
+}
+VOLUME_HINT = {"lore": "History, regions", "peoples": "Races, Eon-Kin", "aspects": "Astra, Fibero, Eternum",
+               "arcana": "Arcana, skill trees", "rules": "Rolls, combat", "catalogs": "Items, relics"}
+ICON_SEARCH = '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4.5 4.5"/></svg>'
+ICON_MOON = '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M20.5 3.5a13 13 0 1 0 8 22.6A11.2 11.2 0 0 1 20.5 3.5z"/></svg>'
+ICON_PREV = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 4 6.5 10l6 6"/></svg>'
+ICON_NEXT = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7.5 4 6 6-6 6"/></svg>'
+
+
+def volume_of(title: str) -> str:
+    t = title.lower()
+    for key, _, _, words in reversed(VOLUMES):
+        if any(w in t for w in words):
+            return key
+    return "lore"
+
+
+def number_sections(page: dict) -> None:
+    """§1, §1.1 … on h2/h3, in the body and in the contents, so any section can be cited."""
+    nums, h2, h3 = {}, 0, 0
+
+    def tag(m):
+        nonlocal h2, h3
+        level, hid = m.group(1), m.group(2)
+        if level == "2":
+            h2, h3 = h2 + 1, 0
+            n = f"{h2}"
+        else:
+            h3 += 1
+            n = f"{max(h2, 1)}.{h3}"
+        nums[hid] = n
+        return f'{m.group(0)}<span class="sec">§{n}</span> '
+    page["body"] = re.sub(r'<h([23]) id="([^"]+)">', tag, page["body"])
+    for t in page["toc"]:
+        t["num"] = nums.get(t["id"], "")
+        for c in t["children"]:
+            c["num"] = nums.get(c["id"], "")
+
 
 def head(title: str, desc: str) -> str:
     robots = '<meta name="robots" content="noindex, nofollow">\n' if HIDDEN else ""
@@ -349,7 +628,7 @@ def head(title: str, desc: str) -> str:
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>{html.escape(title)}</title>
 <meta name="description" content="{html.escape(desc)}">
-{robots}<meta name="theme-color" content="#121826">
+{robots}<meta name="theme-color" content="#1d4a52">
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <meta property="og:title" content="{html.escape(title)}">
 <meta property="og:description" content="{html.escape(desc)}">
@@ -357,72 +636,93 @@ def head(title: str, desc: str) -> str:
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Fira+Mono:wght@700&family=Fira+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/wiki.css">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=Spectral+SC:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/wiki.css?v={ASSET_V}">
 """
 
 
-def topbar() -> str:
-    return """<header class="topbar">
-  <a class="brand" href="index.html"><img src="assets/moon.png" alt="" width="30" height="30"><span><small>World of Dissonance</small>Wiki</span></a>
+def masthead() -> str:
+    return f"""<header class="mast">
+  <a class="brand" href="index.html"><span class="seal">{ICON_MOON}</span><span class="name">World of Dissonance</span></a>
   <div class="search" role="search">
-    <label for="q" class="sr-only">Search the wiki</label>
-    <input id="q" type="search" placeholder="Search the wiki" autocomplete="off" aria-controls="results">
+    <label for="q" class="sr-only">Search the compendium</label>
+    {ICON_SEARCH}
+    <input id="q" type="search" placeholder="Search races, skills, rules" autocomplete="off" aria-controls="results">
+    <kbd aria-hidden="true">/</kbd>
     <ol id="results" class="results" hidden></ol>
   </div>
-  <button class="menu" id="menu" type="button" aria-expanded="false" aria-controls="nav">Contents</button>
 </header>"""
 
 
-def nav(pages: list[dict], current: int | None) -> str:
-    items = []
-    for i, p in enumerate(pages):
-        cls = ["sub"] if p["depth"] else []
-        if p["empty"]:
-            cls.append("soon")
-        cur = ' aria-current="page"' if i == current else ""
-        label = html.escape(p["title"]) + (' <span class="tag">soon</span>' if p["empty"] else "")
-        items.append(f'<li class="{" ".join(cls)}"><a href="{p["file"]}"{cur}>{label}</a></li>')
-    return f'<nav class="nav" id="nav" aria-label="Wiki pages"><ol>{"".join(items)}</ol>\n<a class="maker" href="{MAKER_URL}">Make a character &rarr;</a></nav>'
+def first_page(pages: list[dict], vol: str) -> dict | None:
+    in_vol = [p for p in pages if p["vol"] == vol]
+    return next((p for p in in_vol if not p["empty"]), in_vol[0] if in_vol else None)
+
+
+def thumbs(pages: list[dict], current: str | None) -> str:
+    tabs = []
+    for key, name, num, _ in VOLUMES:
+        target = first_page(pages, key)
+        if not target:
+            continue
+        cur = ' aria-current="true"' if key == current else ""
+        tabs.append(f'<a class="thumb t-{key}" href="{target["file"]}" data-vol="{key}"{cur}><span class="num">{num}</span>'
+                    f'<span class="label">{name}</span><small>{VOLUME_HINT[key]}</small><span class="ribbon" aria-hidden="true"></span></a>')
+    return f'<nav class="thumbs" aria-label="Volumes">{"".join(tabs)}</nav>'
 
 
 def footer(synced: str) -> str:
-    return f"""<footer class="foot">
-  <span>Updated from the World of Dissonance doc. Last synced {synced}.</span>
-  <a href="{DOC_URL}">Open the source doc</a>
+    return f"""<footer class="colophon">
+  <p>Set from the World of Dissonance doc. Last synced {synced}.</p>
+  <p><a href="{DOC_URL}">Open the source doc</a><a href="{MAKER_URL}">Make a character</a></p>
 </footer>
-<script src="assets/wiki.js" defer></script>
+<script src="assets/wiki.js?v={ASSET_V}" defer></script>
 </html>
 """
 
 
 def page_html(p: dict, pages: list[dict], i: int, synced: str) -> str:
-    toc = ""
+    key, name, num = next((k, n, x) for k, n, x, _ in VOLUMES if k == p["vol"])
+    siblings = "".join(
+        f'<li><a href="{s["file"]}"{" aria-current=\"page\"" if s is p else ""}>{html.escape(s["title"])}</a></li>'
+        for s in pages if s["vol"] == key)
+    contents = ""
     if p["toc"]:
         def item(t):
-            kids = "".join(f'<li><a href="#{c["id"]}">{c["name"]}</a></li>' for c in t["children"])
-            return f'<li><a href="#{t["id"]}">{t["name"]}</a>' + (f"<ol>{kids}</ol>" if kids else "") + "</li>"
-        toc = f'<aside class="toc" aria-label="On this page"><h2>On this page</h2><ol>{"".join(item(t) for t in p["toc"])}</ol></aside>'
+            kids = "".join(f'<li><a href="#{c["id"]}"><span>§{c["num"]}</span>{c["name"]}</a></li>' for c in t["children"])
+            return f'<li><a href="#{t["id"]}"><span>§{t["num"]}</span>{t["name"]}</a>' + (f"<ol>{kids}</ol>" if kids else "") + "</li>"
+        contents = (f'<details class="margin" open><summary>In this entry</summary><nav aria-label="In this entry">'
+                    f'<ol>{"".join(item(t) for t in p["toc"])}</ol></nav></details>')
     prev_ = next((pages[j] for j in range(i - 1, -1, -1) if not pages[j]["empty"]), None)
     next_ = next((pages[j] for j in range(i + 1, len(pages)) if not pages[j]["empty"]), None)
-    pager = '<nav class="pager" aria-label="Previous and next page">'
-    pager += f'<a class="prev" href="{prev_["file"]}"><small>Previous</small>{html.escape(prev_["title"])}</a>' if prev_ else "<span></span>"
-    pager += f'<a class="next" href="{next_["file"]}"><small>Next</small>{html.escape(next_["title"])}</a>' if next_ else "<span></span>"
+    pager = '<nav class="pager" aria-label="Previous and next entry">'
+    pager += f'<a class="prev" href="{prev_["file"]}"><small>Previous entry</small>{html.escape(prev_["title"])}</a>' if prev_ else "<span></span>"
+    pager += f'<a class="next" href="{next_["file"]}"><small>Next entry</small>{html.escape(next_["title"])}</a>' if next_ else "<span></span>"
     pager += "</nav>"
-    body = p["body"] if not p["empty"] else '<p class="empty">This section of the doc hasn\'t been written yet. It will appear here as soon as it is.</p>'
+    body = p["body"] if not p["empty"] else '<p class="empty">This entry is still blank in the doc. It will be set here as soon as it is written.</p>'
+    first = p["toc"][0] if p["toc"] else None
+    guide = f'§{first["num"]} {first["name"]}' if first else ""
     desc = (p["text"][:155] + "…") if len(p["text"]) > 155 else (p["text"] or p["title"])
-    return head(f'{p["title"]} | World of Dissonance Wiki', desc) + f"""<body>
-{topbar()}
-<div class="layout">
-{nav(pages, i)}
-<main class="page" id="main">
-  <article class="prose">
-    <h1>{html.escape(p["title"])}</h1>
-    {body}
-  </article>
-  {pager}
-</main>
-{toc}
+    return head(f'{p["title"]} | World of Dissonance Compendium', desc) + f"""<body class="v-{key}" data-vol="{key}" data-page="{p["file"]}" data-title="{html.escape(p["title"])}">
+<a class="skip" href="#text">Skip to the entry</a>
+{masthead()}
+<div class="book">
+  <main class="leaf" id="main">
+    <header class="band">
+      <p class="vol"><span>Vol. {num}</span>{name}</p>
+      <h1>{html.escape(p["title"])}</h1>
+      <nav class="vol-pages" aria-label="{name} entries"><ol>{siblings}</ol></nav>
+    </header>
+    <div class="run" aria-hidden="true"><span>{name} · {html.escape(p["title"])}</span><span class="guide">{guide}</span></div>
+    <div class="spread">
+      {contents}
+      <article class="text" id="text">
+        {body}
+        {pager}
+      </article>
+    </div>
+  </main>
+  {thumbs(pages, key)}
 </div>
 {footer(synced)}"""
 
@@ -433,35 +733,43 @@ def clip(text: str, n: int) -> str:
 
 
 def home_html(pages: list[dict], synced: str) -> str:
-    cards = []
-    for p in pages:
-        if p["depth"]:
+    vols = []
+    for key, name, num, _ in VOLUMES:
+        entries = [p for p in pages if p["vol"] == key]
+        if not entries:
             continue
-        blurb = clip(" ".join(strip(m) for m in re.findall(r"<p>(.*?)</p>", p["body"], re.S)[:3]), 170)
-        sections = len(p["toc"])
-        meta = "Coming soon" if p["empty"] else (f"{sections} sections" if sections else "One page")
-        cards.append(f'<li class="card{" soon" if p["empty"] else ""}"><a href="{p["file"]}"><span class="name">{html.escape(p["title"])}</span>'
-                     f'<span class="blurb">{html.escape(blurb) if blurb else "Not written yet."}</span><span class="meta">{meta}</span></a></li>')
+        rows = []
+        for p in entries:
+            n = len(p["toc"])
+            count = "blank" if p["empty"] else (f"{n} §" if n else "1 §")
+            rows.append(f'<li{" class=\"blank\"" if p["empty"] else ""}><a href="{p["file"]}"><span class="t">{html.escape(p["title"])}</span>'
+                        f'<span class="dots" aria-hidden="true"></span><span class="c">{count}</span></a></li>')
+        vols.append(f'<section class="volume v-{key}"><h2><span>Vol. {num}</span>{name}</h2><p>{VOLUME_BLURB[key]}</p><ol>{"".join(rows)}</ol></section>')
     intro = next((p for p in pages if p["slug"] == "introduction"), None)
     lede = ""
     if intro:
         m = re.search(r"<p>(.*?)</p>", intro["body"], re.S)
-        lede = clip(strip(m.group(1)), 420) if m else ""
-    return head("World of Dissonance Wiki", "The world, peoples, aspects, Arcana and rules of World of Dissonance, the Minecraft TTRPG.") + f"""<body class="home">
-{topbar()}
-<main class="home-main" id="main">
-  <section class="hero">
-    <img class="hero-moon" src="assets/moon.png" alt="" width="160" height="160">
-    <div>
-      <p class="kickerless">The world of Tantalos, the shattered lands of Aeode, and the rules that bind them.</p>
+        lede = clip(strip(m.group(1)), 360) if m else ""
+    total = sum(len(p["toc"]) for p in pages)
+    return head("World of Dissonance Compendium", "The world, peoples, aspects, Arcana and rules of World of Dissonance, the Minecraft TTRPG.") + f"""<body class="home">
+<a class="skip" href="#contents">Skip to the contents</a>
+{masthead()}
+<div class="book">
+  <main class="leaf" id="main">
+    <section class="title-page">
+      <div class="stamp">{ICON_MOON}</div>
       <h1>World of Dissonance</h1>
-      <blockquote>{html.escape(lede)}</blockquote>
-      <div class="hero-actions"><a class="btn primary" href="introduction.html">Start reading</a><a class="btn" href="{MAKER_URL}">Make a character</a></div>
-    </div>
-  </section>
-  <h2 class="section-title">Everything in the doc</h2>
-  <ol class="cards">{"".join(cards)}</ol>
-</main>
+      <p class="sub">A compendium of Tantalos and the shattered lands of Aeode, in six volumes and {total} sections.</p>
+      <blockquote><p>{html.escape(lede)}</p></blockquote>
+      <p class="actions"><a class="btn primary" href="introduction.html">Begin at Vol. I</a><a class="btn resume" href="introduction.html" hidden>Continue reading</a><a class="btn" href="{MAKER_URL}">Make a character</a></p>
+    </section>
+    <section class="contents" id="contents" aria-labelledby="contents-h">
+      <h2 id="contents-h" class="sr-only">Contents</h2>
+      {"".join(vols)}
+    </section>
+  </main>
+  {thumbs(pages, None)}
+</div>
 {footer(synced)}"""
 
 
