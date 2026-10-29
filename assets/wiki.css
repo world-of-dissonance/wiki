@@ -356,3 +356,17 @@ a.term:hover { color: var(--vol); }
   .contents { padding: 32px 16px 0; gap: 32px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+
+/* shared navigation across the World of Dissonance pages (same block in the wiki, maker and workshop) */
+.sitebar {
+  display: flex; align-items: center; gap: 2px; min-height: 38px; overflow-x: auto; scrollbar-width: none;
+  padding: 0 max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px));
+  background: #0d1f24; border-bottom: 1px solid #24464d; font: 600 13px/1 var(--label);
+}
+.sitebar::-webkit-scrollbar { display: none; }
+.sitebar .sb-name { margin-right: auto; padding-right: 16px; font-size: 11px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: #9cc0ba; white-space: nowrap; }
+.sitebar a { padding: 12px 12px 10px; color: #dbe9e5; text-decoration: none; letter-spacing: .04em; white-space: nowrap; border-bottom: 2px solid transparent; }
+.sitebar a:hover { color: #fff; border-bottom-color: #4f7d84; }
+.sitebar a:focus-visible { outline: 2px solid #c9a227; outline-offset: -2px; }
+.sitebar a[aria-current] { color: #ecd68e; border-bottom-color: #c9a227; }
+@media (max-width: 560px) { .sitebar { justify-content: space-between; } .sitebar .sb-name { display: none; } .sitebar a { padding-inline: 8px; } }

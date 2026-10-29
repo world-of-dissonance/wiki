@@ -495,6 +495,78 @@ def link_terms(body: str, gloss: dict[str, dict], file: str) -> str:
     return "".join(out)
 
 
+def skills_data(pages: list[dict]) -> list[dict]:
+    """Every written skill with its tree, path and tier, for the character maker's skill picker (site/skills.json)."""
+    out = []
+    for p in pages:
+        if p["empty"] or 'class="record"' not in p["body"]:
+            continue
+        paths = tree_paths(p.get("md", ""))
+        tree = path = None
+        tier, tier_id = 0, ""
+        token = re.compile(r'<h2 id="[^"]+">(.*?)</h2>|<h3 id="[^"]+">(.*?)</h3>|<h4 id="([^"]+)">\[T(\d+)\][^<]*</h4>'
+                           r'|<div class="table-wrap record-wrap"(?: id="([^"]+)")?><table class="record"><tbody><tr>(.*?)</tr>', re.S)
+        for m in token.finditer(p["body"]):
+            if m.group(1) is not None:
+                name = named(re.sub(r"^§[\d.]+\s*", "", strip(m.group(1))).upper(), paths)
+                tree, path, tier = name, None, 0
+            elif m.group(2) is not None:
+                path = re.sub(r"^§[\d.]+\s*", "", strip(m.group(2)))
+            elif m.group(4):
+                tier, tier_id = int(m.group(4)), m.group(3)
+            elif m.group(6) is not None and tree and tier:
+                cells = re.findall(r"<td[^>]*>(.*?)</td>", m.group(6), re.S)
+                name = re.sub(r"^#\d+\s*", "", strip(cells[0])) if cells else ""
+                if not name or len(cells) < 3 or not strip(cells[2]) or name.lower() in ("progression", "mastery"):
+                    continue  # an unwritten slot, or the row saying where the path leads next
+                if any(o["name"].lower() == name.lower() for o in out):
+                    continue  # the doc pastes some skills under other trees, sometimes lightly edited; the first copy is the real one
+                stats = {}
+                for c in cells[3:]:
+                    k = re.match(r"<b>(.*?)</b>\s*(.*)", c, re.S)
+                    if k:
+                        stats[strip(k.group(1)).lower()] = strip(k.group(2))
+                ep = re.search(r"\d+", strip(cells[1])) if len(cells) > 1 else None
+                out.append({
+                    "name": re.sub(r"^#\d+\s*", "", strip(cells[0])), "tree": tree.lower(), "path": path or "Main Path", "tier": tier,
+                    "ep": int(ep.group()) if ep else None, "effect": strip(cells[2]) if len(cells) > 2 else "",
+                    "cast": stats.get("cast time", ""), "lasts": stats.get("lasts for", ""), "range": stats.get("range", ""),
+                    "cooldown": stats.get("cooldown", ""), "url": f'{p["file"]}#{m.group(5) or tier_id}',
+                })
+    return out
+
+
+def levels_data(pages: list[dict]) -> dict:
+    """The doc's milestone table ("3. +1 Skill Slot +1 Stat Point +Arcana Advance ..."), one entry per level, plus the
+    caps its totals state (the rows add up to more skill slots and trees than the totals allow), for site/levels.json."""
+    md = next((p["md"] for p in pages if "Standard Leveling" in p.get("md", "")), "")
+    md = md[md.find("Standard Leveling"):]
+    totals = re.sub(r"\\(.)", r"\1", md[:md.find("Refinement")] if "Refinement" in md else md)
+    cap = lambda pat: int(x.group(1)) if (x := re.search(pat, totals, re.I)) else None
+    out = []
+    for line in md.splitlines():
+        m = re.match(r"^\s*(\d+)\\?\.\s*(.*)$", line)
+        if not m:
+            if out and line.strip().lower().startswith("total"):
+                break  # the table's own totals follow it
+            continue
+        t = re.sub(r"\\(.)", r"\1", m.group(2))
+        num = lambda pat: int(x.group(1)) if (x := re.search(pat, t, re.I)) else 0
+        out.append({
+            "level": int(m.group(1)),
+            "skillSlots": num(r"\+(\d+)\s*Skill Slot"),
+            "statPoints": num(r"\+(\d+)\s*Stat Point"),
+            "arcanaAdvance": bool(re.search(r"Arcana Advance(?!ment)", t, re.I)),
+            "newTreeOrAdvance": bool(re.search(r"New Arcana Tree", t, re.I)),
+            "signatureAdvance": bool(re.search(r"Signature Advance", t, re.I)),
+            "reslot": bool(re.search(r"Reslotting", t, re.I)),
+            "baseTrees": 2 if re.search(r"Two Base Arcana", t, re.I) else 0,
+            "text": re.sub(r"\s+", " ", t).strip(),
+        })
+    return {"levels": out, "maxSkillSlots": cap(r"Possible Skill Slots:\s*(\d+)"),
+            "maxTrees": cap(r"Arcana Tree Choices:\s*\d+\s*/\s*(\d+)"), "maxStatPoints": cap(r"Bonus Stat Points:\s*(\d+)")}
+
+
 def readable(body: str) -> str:
     """Body without the parts that are navigation, not text (diagrams, folded blank slots), for search and summaries."""
     return re.sub(r'<details class="unwritten">.*?</details>|<figure class="tree".*?</figure>', " ", body, flags=re.S)
@@ -532,7 +604,7 @@ def build(tabs: list[dict], out: Path) -> dict:
         while any(p["slug"] == slug for p in pages):
             slug += "-2"
         page = {"title": title, "slug": slug, "file": f"{slug}.html", "depth": len(t["path"]) - 1, "empty": not t["md"].strip(),
-                "vol": volume_of(title)}
+                "vol": volume_of(title), "md": t["md"]}
         if page["empty"]:
             page.update(body="", toc=[], text="")
         else:
@@ -544,6 +616,8 @@ def build(tabs: list[dict], out: Path) -> dict:
     for p in pages:
         if not p["empty"]:
             p["body"] = link_terms(p["body"], gloss, p["file"])
+    (out / "levels.json").write_text(json.dumps(levels_data(pages), ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    (out / "skills.json").write_text(json.dumps(skills_data(pages), ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     (out / "glossary.json").write_text(json.dumps(gloss, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
     search = []
@@ -642,7 +716,8 @@ def head(title: str, desc: str) -> str:
 
 
 def masthead() -> str:
-    return f"""<header class="mast">
+    return f"""<nav class="sitebar" aria-label="World of Dissonance pages"><span class="sb-name">World of Dissonance</span><a href="https://world-of-dissonance.github.io/wiki/" aria-current="page">Wiki</a><a href="https://world-of-dissonance.github.io/wod-character-maker/">Character Maker</a><a href="https://world-of-dissonance.github.io/wod-character-maker/workshop.html">DM Workshop</a></nav>
+<header class="mast">
   <a class="brand" href="index.html"><span class="seal">{ICON_MOON}</span><span class="name">World of Dissonance</span></a>
   <div class="search" role="search">
     <label for="q" class="sr-only">Search the compendium</label>
