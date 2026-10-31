@@ -528,11 +528,34 @@ def skills_data(pages: list[dict]) -> list[dict]:
                         stats[strip(k.group(1)).lower()] = strip(k.group(2))
                 ep = re.search(r"\d+", strip(cells[1])) if len(cells) > 1 else None
                 out.append({
-                    "name": re.sub(r"^#\d+\s*", "", strip(cells[0])), "tree": tree.lower(), "path": path or "Main Path", "tier": tier,
+                    "name": re.sub(r"^#\d+\s*", "", strip(cells[0])), "slot": int(n.group(1)) if (n := re.match(r"#(\d+)", strip(cells[0]))) else None,
+                    "tree": tree.lower(), "path": path or "Main Path", "tier": tier,
                     "ep": int(ep.group()) if ep else None, "effect": strip(cells[2]) if len(cells) > 2 else "",
                     "cast": stats.get("cast time", ""), "lasts": stats.get("lasts for", ""), "range": stats.get("range", ""),
                     "cooldown": stats.get("cooldown", ""), "url": f'{p["file"]}#{m.group(5) or tier_id}',
                 })
+    return out
+
+
+def trees_data(pages: list[dict]) -> list[dict]:
+    """Every skill tree's main path and branches with their tier names, written or not, for the Skill Forge (site/trees.json)."""
+    out = []
+    clean = lambda h: re.sub(r"^§[\d.]+\s*", "", strip(h)).strip(" :")
+    for p in pages:
+        if p["empty"] or 'class="record"' not in p["body"]:
+            continue
+        paths = tree_paths(p.get("md", ""))
+        parts = re.split(r'<h2 id="[^"]+">(.*?)</h2>', p["body"], flags=re.S)
+        for i in range(1, len(parts), 2):
+            tree = named(clean(parts[i]).upper(), paths)
+            if not tree:
+                continue
+            branches = []
+            for h in re.findall(r'<h3 id="[^"]+">(.*?)</h3>', parts[i + 1], re.S):
+                name, b = clean(h), named(clean(h).upper(), paths)
+                if b and b != tree and not any(x["name"].lower() == name.lower() for x in branches):  # the doc repeats some headings
+                    branches.append({"name": name, "tiers": paths[b]})
+            out.append({"id": tree.lower(), "name": tree.title(), "main": paths[tree], "branches": branches})
     return out
 
 
@@ -618,6 +641,7 @@ def build(tabs: list[dict], out: Path) -> dict:
             p["body"] = link_terms(p["body"], gloss, p["file"])
     (out / "levels.json").write_text(json.dumps(levels_data(pages), ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     (out / "skills.json").write_text(json.dumps(skills_data(pages), ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    (out / "trees.json").write_text(json.dumps(trees_data(pages), ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     (out / "glossary.json").write_text(json.dumps(gloss, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
     search = []
@@ -716,7 +740,7 @@ def head(title: str, desc: str) -> str:
 
 
 def masthead() -> str:
-    return f"""<nav class="sitebar" aria-label="World of Dissonance pages"><span class="sb-name">World of Dissonance</span><a href="https://world-of-dissonance.github.io/wiki/" aria-current="page">Wiki</a><a href="https://world-of-dissonance.github.io/wod-character-maker/">Character Maker</a><a href="https://world-of-dissonance.github.io/wod-character-maker/workshop.html">DM Workshop</a></nav>
+    return f"""<nav class="sitebar" aria-label="World of Dissonance pages"><span class="sb-name">World of Dissonance</span><a href="https://world-of-dissonance.github.io/wiki/" aria-current="page">Wiki</a><a href="https://world-of-dissonance.github.io/wod-character-maker/">Character Maker</a><a href="https://world-of-dissonance.github.io/wod-character-maker/workshop.html">DM Workshop</a><a href="https://world-of-dissonance.github.io/wod-character-maker/skillforge.html">Skill Forge</a></nav>
 <header class="mast">
   <a class="brand" href="index.html"><span class="seal">{ICON_MOON}</span><span class="name">World of Dissonance</span></a>
   <div class="search" role="search">
