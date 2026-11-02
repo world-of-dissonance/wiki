@@ -328,10 +328,13 @@ def tree_paths(md: str) -> dict[str, list[str]]:
     """The doc sums up every skill path as "NAME: tier -> tier -> tier"; those lines are the trees' source of truth."""
     paths: dict[str, list[str]] = {}
     for line in md.splitlines():
-        if "\\-\\>" not in line and "->" not in line:
+        if "\\-\\>" not in line and "->" not in line and "<-" not in line:
             continue
         line = re.sub(r"\\(.)", r"\1", line)
         line = re.sub(r"[*↘↗↕^|\\/]", " ", line)
+        if m := re.search(r"(\w+)\s*<-\s*(\w+)\s*<-\s*(\w+)\s*<-\s*(\w+)", line):  # Infuse's Mastery runs right to left: "Grand <- Gild <- Grasp <- Mastery"
+            paths.setdefault(m[4].upper(), [m[3], m[2], m[1]])
+            continue
         for m in re.finditer(r"([A-Z][A-Z ]{1,20}[A-Z]):\s*(.*?)(?=\s[A-Z][A-Z ]{1,20}[A-Z]:|$)", line):
             tiers = [t.strip(" .-") for t in re.split(r"->|-(?=>)|\s{2,}", m.group(2)) if t.strip(" .->")]
             tiers = [re.sub(r"\s+", " ", t) for t in tiers if not re.fullmatch(r"[A-Z ]+", t)][:4]
@@ -537,6 +540,9 @@ def skills_data(pages: list[dict]) -> list[dict]:
     return out
 
 
+CHART_ONLY_BRANCHES = {"INFUSE": ["MASTERY"]}  # shortcut: on the chart but no heading in the doc yet, drop once the doc has one
+
+
 def trees_data(pages: list[dict]) -> list[dict]:
     """Every skill tree's main path and branches with their tier names, written or not, for the Skill Forge (site/trees.json)."""
     out = []
@@ -555,6 +561,9 @@ def trees_data(pages: list[dict]) -> list[dict]:
                 name, b = clean(h), named(clean(h).upper(), paths)
                 if b and b != tree and not any(x["name"].lower() == name.lower() for x in branches):  # the doc repeats some headings
                     branches.append({"name": name, "tiers": paths[b]})
+            for b in CHART_ONLY_BRANCHES.get(tree, ()):
+                if b in paths and not any(x["name"].upper() == b for x in branches):
+                    branches.append({"name": b.title(), "tiers": paths[b]})
             out.append({"id": tree.lower(), "name": tree.title(), "main": paths[tree], "branches": branches})
     return out
 

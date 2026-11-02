@@ -8,6 +8,8 @@ assert trees["mind"]["main"] == ["Telepathy", "Telekinesis", "Thought"], trees["
 assert [b["name"] for b in trees["mind"]["branches"]] == ["Control", "Bind", "Perception", "Concept"], trees["mind"]["branches"]
 assert trees["mind"]["branches"][0]["tiers"] == ["Puppet", "Combine", "Tinker"]
 assert [b["name"] for b in trees["element"]["branches"]] == ["Optimized", "Destruction", "Traditional", "New Age"], trees["element"]["branches"]  # the doc repeats Traditional
+assert trees["infuse"]["branches"][-1] == {"name": "Mastery", "tiers": ["Grasp", "Gild", "Grand"]}, trees["infuse"]["branches"]
+assert all(len(t["branches"]) == 4 for t in trees.values()), {k: len(t["branches"]) for k, t in trees.items()}
 skills = json.load(open("site/skills.json", encoding="utf-8"))
 assert all(1 <= s["slot"] <= 5 for s in skills), [s["name"] for s in skills if not 1 <= s.get("slot", 0) <= 5]
 assert next(s for s in skills if s["name"] == "Connective Net")["slot"] == 2
