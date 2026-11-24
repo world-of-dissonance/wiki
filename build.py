@@ -24,6 +24,8 @@ from pathlib import Path
 import markdown
 from PIL import Image
 
+import items
+
 DOC_ID = "1M1IhapeJzbYW3Rs9hUHhS7oGkTHOuXiS8hxC0XlLKGk"
 DOC_URL = f"https://docs.google.com/document/d/{DOC_ID}"
 SITE_URL = "https://world-of-dissonance.github.io/wiki/"
@@ -33,7 +35,9 @@ HIDDEN = True
 ROOT = Path(__file__).resolve().parent
 # changes to the stylesheet or script get a new URL, so browsers never run a stale copy against new pages
 ASSET_V = hashlib.sha256((ROOT / "assets/wiki.css").read_bytes() + (ROOT / "assets/wiki.js").read_bytes()).hexdigest()[:10]
-GENERATOR_VERSION = "7"
+ITEMS_V = hashlib.sha256(b"".join((ROOT / "assets" / f).read_bytes() for f in ("items.css", "itemtip.js", "items.js"))).hexdigest()[:10]
+CATALOG_RARITY = {"mundane-item-catalog": ("mundane", "mundane items"), "trinket-catalog": ("trinket", "trinkets"), "relic-catalog": ("relic", "relics")}
+GENERATOR_VERSION = "8"
 
 
 # ---------- fetching ----------
@@ -643,10 +647,15 @@ def build(tabs: list[dict], out: Path) -> dict:
             page["body"], page["toc"], page["text"] = render(t, slug, out)
             number_sections(page)
         pages.append(page)
+    item_list = items.load(items.FILE)
+    item_page = items.page(item_list)
+    number_sections(item_page)
+    last = max((n for n, p in enumerate(pages) if p["vol"] == "catalogs"), default=len(pages) - 1)
+    pages.insert(last + 1, item_page)
 
-    gloss = collect_terms(pages)
+    gloss = collect_terms([p for p in pages if p is not item_page])
     for p in pages:
-        if not p["empty"]:
+        if not p["empty"] and p is not item_page:
             p["body"] = link_terms(p["body"], gloss, p["file"])
     (out / "levels.json").write_text(json.dumps(levels_data(pages), ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     (out / "skills.json").write_text(json.dumps(skills_data(pages), ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
@@ -657,9 +666,10 @@ def build(tabs: list[dict], out: Path) -> dict:
     for p in pages:
         if not p["empty"]:
             search += sections_for_search(p["body"], p)
+    search += items.search(item_list, item_page)
     (out / "search.json").write_text(json.dumps(search, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
-    digest = hashlib.sha256((GENERATOR_VERSION + "".join(t["md"] for t in tabs)).encode()).hexdigest()
+    digest = hashlib.sha256((GENERATOR_VERSION + "".join(t["md"] for t in tabs) + items.FILE.read_text(encoding="utf-8")).encode()).hexdigest()
     synced = time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime())
     for i, p in enumerate(pages):
         (out / p["file"]).write_text(page_html(p, pages, i, synced), encoding="utf-8")
@@ -727,7 +737,7 @@ def number_sections(page: dict) -> None:
             c["num"] = nums.get(c["id"], "")
 
 
-def head(title: str, desc: str) -> str:
+def head(title: str, desc: str, extra: str = "") -> str:
     robots = '<meta name="robots" content="noindex, nofollow">\n' if HIDDEN else ""
     return f"""<!doctype html>
 <html lang="en">
@@ -745,7 +755,7 @@ def head(title: str, desc: str) -> str:
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=Spectral+SC:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/wiki.css?v={ASSET_V}">
-"""
+{extra}"""
 
 
 def masthead() -> str:
@@ -808,10 +818,13 @@ def page_html(p: dict, pages: list[dict], i: int, synced: str) -> str:
     pager += f'<a class="next" href="{next_["file"]}"><small>Next entry</small>{html.escape(next_["title"])}</a>' if next_ else "<span></span>"
     pager += "</nav>"
     body = p["body"] if not p["empty"] else '<p class="empty">This entry is still blank in the doc. It will be set here as soon as it is written.</p>'
+    if p["slug"] in CATALOG_RARITY:  # our item database already holds these, whatever the doc has yet
+        r, words = CATALOG_RARITY[p["slug"]]
+        body += f'<p class="see-items"><a href="item-database.html#rarity={r}">See the {words} in the item database</a></p>'
     first = p["toc"][0] if p["toc"] else None
     guide = f'§{first["num"]} {first["name"]}' if first else ""
     desc = (p["text"][:155] + "…") if len(p["text"]) > 155 else (p["text"] or p["title"])
-    return head(f'{p["title"]} | World of Dissonance Compendium', desc) + f"""<body class="v-{key}" data-vol="{key}" data-page="{p["file"]}" data-title="{html.escape(p["title"])}">
+    return head(f'{p["title"]} | World of Dissonance Compendium', desc, p.get("extra", "").replace("{v}", ITEMS_V)) + f"""<body class="v-{key}" data-vol="{key}" data-page="{p["file"]}" data-title="{html.escape(p["title"])}">
 <a class="skip" href="#text">Skip to the entry</a>
 {masthead()}
 <div class="book">

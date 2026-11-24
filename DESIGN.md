@@ -268,6 +268,9 @@ Runs of blank skill templates fold into one `details` line: "+ 3 unwritten slots
 ### Term Link and Popover
 A `[Bracketed Term]` the glossary knows is a dotted volume-colour underline. Hover, focus or first tap opens a plate-white card with a gilt head rule: the term in Spectral SC, its definition, and a "Read it in <page>" link. Escape, scrolling (pointer devices) or clicking elsewhere closes it.
 
+### Item Database and the Game Tooltip (named exception)
+The Item Database (Catalogs, built from our own `items/items.json`, not the doc) is a reference table with sortable heads and a filter bar; on that page alone the table may use the leaf's full width while its prose keeps 68ch. Hovering, focusing or tapping an item opens the game's own item tooltip, copied from the mod's GearScreen (Cut skin): paper card, ink border, sky offset shadow, ink name tag, rarity chips, gold slab, dark lore slip, in the mod's fonts at 2.4 px per canvas unit. It is the one place the wiki shows a bordered card, a shadow and rarity colours, because it has to match what players see in game; nothing else may borrow it.
+
 ## Do's and Don'ts
 
 ### Do:

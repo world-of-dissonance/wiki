@@ -1,0 +1,88 @@
+/* The Item Database page. The filters and table follow the wiki; the tooltip does not: it copies the game's item
+   tooltip (the mod's GearScreen, Cut skin) unit for unit, at 2.4 px per canvas unit, in the mod's own fonts. */
+@font-face { font-family: "WoD Anton"; src: url("fonts/anton-regular.ttf") format("truetype"); font-display: swap; }
+@font-face { font-family: "WoD Fira Sans"; src: url("fonts/firasans-regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "WoD Fira Sans"; src: url("fonts/firasans-semibold.ttf") format("truetype"); font-weight: 600; font-display: swap; }
+@font-face { font-family: "WoD Fira Mono"; src: url("fonts/firamono-bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "WoD Garamond"; src: url("fonts/ebgaramond-italic.ttf") format("truetype"); font-style: italic; font-display: swap; }
+
+/* filters: label-font captions over plain fields, like the search box's apparatus */
+.item-filters { display: flex; flex-wrap: wrap; gap: 12px 20px; margin: 1.2em 0 .4em; }
+.item-filters label { display: grid; gap: 4px; font: 700 11px/1.2 var(--label); letter-spacing: .14em; text-transform: uppercase; color: var(--mute); }
+.item-filters input, .item-filters select {
+  min-height: 40px; padding: 0 10px; border: 1px solid var(--rule); border-radius: 3px; background: var(--plate);
+  font: 500 15px/1.2 var(--label); letter-spacing: 0; text-transform: none; color: var(--ink);
+}
+.item-filters input { min-width: min(260px, 100%); }
+.item-filters input:focus-visible, .item-filters select:focus-visible { outline: 2px solid var(--gilt); outline-offset: 1px; }
+.item-count { font: 500 13px/1.4 var(--label); color: var(--mute); margin: .2em 0 0; }
+.item-none { color: var(--mute); }
+
+/* a database needs room more than a reading measure: the table takes the leaf's width, the prose keeps 68ch */
+body[data-page="item-database.html"] .text { max-width: none; }
+body[data-page="item-database.html"] .text > :is(p, h2, form) { max-width: 68ch; }
+
+/* the table: the wiki's reference table, with sortable heads */
+.item-table thead th { padding: 0; }
+.item-table thead button {
+  all: unset; box-sizing: border-box; display: block; width: 100%; padding: 8px 12px; cursor: pointer; white-space: nowrap;
+  font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit;
+}
+.item-table thead button::after { content: ""; display: inline-block; width: 1.1em; }
+.item-table th[aria-sort="ascending"] button::after { content: " ▲"; }
+.item-table th[aria-sort="descending"] button::after { content: " ▼"; }
+.item-table thead button:focus-visible { outline: 2px solid var(--gilt); outline-offset: -2px; }
+.item-table td, .item-table tbody th { white-space: nowrap; }
+.item-table td { min-width: 0; padding: 8px 10px; }
+.item-table thead button { padding: 8px 10px; }
+/* the name is a row header for screen readers, but sits like the wiki's bold first column */
+.item-table tbody th {
+  padding: 8px 12px; border-top: 1px solid var(--rule); background: none; color: var(--ink);
+  font: 700 15px/1.45 var(--label); letter-spacing: 0; text-transform: none;
+}
+.item-table tbody tr:hover th { background: color-mix(in srgb, var(--vol) 6%, var(--page)); }
+.item-table a.item { color: var(--ink); text-decoration: underline dotted color-mix(in srgb, var(--vol) 70%, transparent); text-underline-offset: 3px; }
+.item-table a.item:hover, .item-table a.item:focus-visible { color: var(--vol); }
+.see-items a { font: 700 13px/1.4 var(--label); letter-spacing: .1em; text-transform: uppercase; }
+
+/* the game's tooltip */
+.itip {
+  --u: 2.4px; --ink: #232B42; --paper: #EEF5FB;
+  position: fixed; z-index: 80; box-sizing: border-box; /* width: set from the game's own measure, in items.js */
+  padding: calc(16 * var(--u)) calc(7 * var(--u)) calc(6 * var(--u)); background: var(--paper); color: var(--ink);
+  outline: calc(2 * var(--u)) solid var(--ink); box-shadow: calc(4 * var(--u)) calc(4 * var(--u)) 0 0 #A7D4E3;
+  pointer-events: none; text-align: left;
+}
+.itip[hidden] { display: none; }
+.itip p, .itip ul { margin: 0; }
+.itip .tag {
+  position: absolute; left: calc(-2 * var(--u)); top: calc(-3 * var(--u)); max-width: calc(100% + 2 * var(--u)); height: calc(15 * var(--u));
+  padding: 0 calc(6 * var(--u)); box-sizing: border-box; background: var(--ink); color: #fff;
+  font: calc(11 * var(--u)) / calc(15.5 * var(--u)) "WoD Anton", Impact, sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.itip .chips { display: flex; flex-wrap: wrap; gap: calc(3 * var(--u)); margin-bottom: calc(4.5 * var(--u)); }
+.itip .chip {
+  display: inline-flex; align-items: center; height: calc(8 * var(--u)); padding: 0 calc(3.5 * var(--u)); background: #fff;
+  outline: calc(.75 * var(--u)) solid #B8CCE4; font: 700 calc(5.5 * var(--u)) / 1 "WoD Fira Mono", monospace; white-space: nowrap;
+}
+.itip .dia { width: calc(5.2 * var(--u)); height: calc(5.2 * var(--u)); margin: 0 calc(1.4 * var(--u)) 0 calc(-.6 * var(--u)); flex: none; }
+.itip .slab {
+  position: relative; display: flex; align-items: center; gap: calc(4 * var(--u)); height: calc(16 * var(--u));
+  padding-left: calc(5 * var(--u)); margin-bottom: calc(4.5 * var(--u)); isolation: isolate;
+}
+.itip .slab::before { content: ""; position: absolute; inset: 0; z-index: -1; background: #F2C14E; transform: skewX(-7.83deg); }
+.itip .slab b { font: 400 calc(13 * var(--u)) / 1 "WoD Anton", Impact, sans-serif; padding-top: calc(.5 * var(--u)); }
+.itip .slab span, .itip .use { font: 400 calc(6.5 * var(--u)) / 1.3 "WoD Fira Sans", sans-serif; }
+.itip .use { margin-bottom: calc(4.5 * var(--u)); }
+.itip .bonus { list-style: none; padding: 0; margin-bottom: calc(3.5 * var(--u)); }
+.itip .bonus li { position: relative; padding-left: calc(7 * var(--u)); margin-bottom: calc(1 * var(--u)); font: 600 calc(6.5 * var(--u)) / 1.3 "WoD Fira Sans", sans-serif; }
+.itip .bonus li::before {
+  content: ""; position: absolute; left: calc(.3 * var(--u)); top: calc(2.3 * var(--u)); width: calc(3.4 * var(--u)); height: calc(3.4 * var(--u));
+  background: var(--ink); transform: rotate(45deg);
+}
+.itip .lore {
+  padding: calc(3.5 * var(--u)) calc(3 * var(--u)) calc(3.5 * var(--u)) calc(4 * var(--u)); margin-bottom: calc(4.5 * var(--u));
+  background: #2E3957; border-left: calc(2 * var(--u)) solid; color: #EAF2FB; font: italic 400 calc(7.5 * var(--u)) / 1.25 "WoD Garamond", Georgia, serif;
+}
+.itip .foot { font: 700 calc(5.5 * var(--u)) / calc(6 * var(--u)) "WoD Fira Mono", monospace; color: #4B5675; }
+@media (max-width: 520px) { .itip { --u: 2px; } }
